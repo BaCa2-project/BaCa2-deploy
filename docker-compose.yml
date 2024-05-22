@@ -1,0 +1,90 @@
+services:
+
+  webapp:
+    image: zyndramzm/baca2-web-app
+    pull_policy: always
+    ports:
+      - "80:8000"
+    volumes:
+      - packages_volume:/usr/share/baca2_share/packages
+    networks:
+      inner_network:
+        - aliases:
+            - webapp.domain
+    environment:
+      - HOST_IP=0.0.0.0
+      - PACKAGES_DIR=/usr/share/baca2_share/packages
+
+      - HOST_NAME=${WEBAPP_HOST_NAME}
+      - AUTH_DOMAIN=${WEBAPP_AUTH_DOMAIN}
+      - OIDC_RP_CLIENT_ID=${WEBAPP_OIDC_RP_CLIENT_ID}
+      - USOS_GATEWAY=${WEBAPP_USOS_GATEWAY}
+      - UPLOADS_DIR=${WEBAPP_UPLOADS_DIR}
+      - TASK_DESCRIPTION_DIR=${WEBAPP_TASK_DESCRIPTION_DIR}
+      - ATTACHMENTS_DIR=${WEBAPP_ATTACHMENTS_DIR}
+
+      - SECRET_KEY=${WEBAPP_SECRET_KEY}
+      - USOS_CONSUMER_KEY=${WEBAPP_USOS_CONSUMER_KEY}
+      - USOS_CONSUMER_SECRET=${WEBAPP_USOS_CONSUMER_SECRET}
+
+      - BACA2_DB_USER=${BACA2_DB_USER}
+      - BACA2_DB_PASSWORD=${BACA2_DB_PASSWORD}
+      - BACA2_DB_ROOT_USER=${BACA2_DB_ROOT_USER}
+      - BACA2_DB_ROOT_PASSWORD=$[BACA2_DB_ROOT_PASSWORD}
+
+      - EMAIL_USER=${WEBAPP_EMAIL_USER}
+      - EMAIL_PASSWORD=${WEBAPP_EMAIL_PASSWORD}
+      - OIDC_RP_CLIENT_SECRET=${WEBAPP_OIDC_RP_CLIENT_SECRET}
+
+      - BACA_PASSWORD=${BACA_API_PASSWORD}
+      - BROKER_PASSWORD=${BROKER_API_PASSWORD}
+
+      - BACA2_DB_HOST=db.domain
+      - BROKER_URL=http://broker.domain
+
+  broker:
+    image: zyndramzm/baca2-broker
+    pull_policy: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - packages_volume:/usr/share/baca2_share/packages
+    networks:
+      inner_network:
+        - aliases:
+            - broker.domain
+    environment:
+      - PACKAGES_DIR=/usr/share/baca2_share/packages
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8080
+      - BACA_URL=http://webapp.domain/broker_api
+
+      - SUBMITS_DIR=${SUBMITS_DIR}
+      - SERVER_URL=${BROKER_SERVER_URL}  # public url for kolejka callback
+      - ACTIVE_WAIT=${BROKER_ACTIVE_WAIT}
+
+      - BACA_PASSWORD=${BACA_API_PASSWORD}
+      - BROKER_PASSWORD=${BROKER_API_PASSWORD}
+
+  database:
+    build: ./database
+#    ports:
+#      - "5432:5432"
+    volumes:
+      - baca2_bd_volume:/var/lib/postgresql/data
+    networks:
+      inner_network:
+        - aliases:
+            - db.domain
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+
+
+volumes:
+  packages_volume:
+  baca2_bd_volume:
+
+networks:
+  inner_network:
