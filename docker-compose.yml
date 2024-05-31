@@ -1,16 +1,31 @@
 services:
 
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx-configuration.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "80:80"
+      - "8080:8080"
+    networks:
+      inner_network:
+        aliases:
+          - nginx.domain
+    depends_on:
+      - webapp
+      - broker
+
   webapp:
     image: zyndramzm/baca2-web-app
     pull_policy: always
-    ports:
-      - "80:8000"
+#    ports:
+#      - "80:8000"
     volumes:
       - packages_volume:/usr/share/baca2_share/packages
     networks:
       inner_network:
-        - aliases:
-            - webapp.domain
+        aliases:
+          - webapp.domain
     environment:
       - HOST_IP=0.0.0.0
       - PACKAGES_DIR=/usr/share/baca2_share/packages
@@ -45,14 +60,14 @@ services:
   broker:
     image: zyndramzm/baca2-broker
     pull_policy: always
-    ports:
-      - "8080:8080"
+#    ports:
+#      - "8080:8080"
     volumes:
       - packages_volume:/usr/share/baca2_share/packages
     networks:
       inner_network:
-        - aliases:
-            - broker.domain
+        aliases:
+          - broker.domain
     environment:
       - PACKAGES_DIR=/usr/share/baca2_share/packages
       - SERVER_HOST=0.0.0.0
@@ -67,15 +82,16 @@ services:
       - BROKER_PASSWORD=${BROKER_API_PASSWORD}
 
   database:
-    build: ./database
+    image: postgres:latest
 #    ports:
 #      - "5432:5432"
     volumes:
+      - ./postgres-schema.sql:/docker-entrypoint-initdb.d/schema.sql
       - baca2_bd_volume:/var/lib/postgresql/data
     networks:
       inner_network:
-        - aliases:
-            - db.domain
+        aliases:
+          - db.domain
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
