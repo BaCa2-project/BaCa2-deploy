@@ -17,11 +17,9 @@ services:
       - broker
 
   webapp:
-    image: zyndramzm/baca2-web-app
+    image: zyndramzm/baca2-web-app:latest
     pull_policy: always
     restart: unless-stopped
-#    ports:
-#      - "80:8000"
     volumes:
       - packages_volume:/usr/share/baca2_share/packages
     networks:
@@ -29,9 +27,9 @@ services:
         aliases:
           - webapp.domain
     environment:
-      - HOST_IP=0.0.0.0
       - PACKAGES_DIR=/usr/share/baca2_share/packages
 
+      - HOST_IP=${WEBAPP_HOST_IP}
       - HOST_NAME=${WEBAPP_HOST_NAME}
       - AUTH_DOMAIN=${WEBAPP_AUTH_DOMAIN}
       - OIDC_RP_CLIENT_ID=${WEBAPP_OIDC_RP_CLIENT_ID}
@@ -58,13 +56,13 @@ services:
 
       - BACA2_DB_HOST=db.domain
       - BROKER_URL=http://broker.domain
+    depends_on:
+      - database
 
   broker:
-    image: zyndramzm/baca2-broker
+    image: zyndramzm/baca2-broker:latest
     pull_policy: always
     restart: unless-stopped
-#    ports:
-#      - "8080:8080"
     volumes:
       - packages_volume:/usr/share/baca2_share/packages
     networks:
@@ -73,13 +71,16 @@ services:
           - broker.domain
     environment:
       - PACKAGES_DIR=/usr/share/baca2_share/packages
-      - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=8080
       - BACA_URL=http://webapp.domain/broker_api
 
+      - SERVER_HOST=${BROKER_SERVER_HOST_IP}
       - SUBMITS_DIR=${SUBMITS_DIR}
       - SERVER_URL=${BROKER_SERVER_URL}  # public url for kolejka callback
       - ACTIVE_WAIT=${BROKER_ACTIVE_WAIT}
+
+      - KOLEJKA_SERVER=${KOLEJKA_SERVER}
+      - KOLEJKA_USERNAME=${KOLEJKA_USERNAME}
+      - KOLEJKA_PASSWORD=${KOLEJKA_PASSWORD}
 
       - BACA_PASSWORD=${BACA_API_PASSWORD}
       - BROKER_PASSWORD=${BROKER_API_PASSWORD}
@@ -87,10 +88,7 @@ services:
   database:
     image: postgres:latest
     restart: on-failure
-#    ports:
-#      - "5432:5432"
     volumes:
-      - ./postgres-schema.sql:/docker-entrypoint-initdb.d/schema.sql
       - baca2_bd_volume:/var/lib/postgresql/data
     networks:
       inner_network:
